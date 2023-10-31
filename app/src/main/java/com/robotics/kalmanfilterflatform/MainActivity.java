@@ -189,32 +189,37 @@ public class MainActivity extends AppCompatActivity {
     //////////////////////////////
     public void accel2euler(double ax, double ay, double az){
         double g= 9.81;
-        theta= Math.asin(ax/g);
-        phi=Math.asin(-ay/(g*Math.cos(theta)));
+        theta= Math.asin(ax/g);  //rad
+        phi=Math.asin(-ay/(g*Math.cos(theta))); //rad
     }
     public void euler2quater(double roll,double pitch,double yaw){
-        double cr = Math.cos(roll * 0.5);
-        double sr = Math.sin(roll * 0.5);
-        double cp = Math.cos(pitch * 0.5);
-        double sp = Math.sin(pitch * 0.5);
-        double cy = Math.cos(yaw * 0.5);
-        double sy = Math.sin(yaw * 0.5);
+        double cr = Math.cos(roll * 0.5); //rad
+        double sr = Math.sin(roll * 0.5); //rad
+        double cp = Math.cos(pitch * 0.5);//rad
+        double sp = Math.sin(pitch * 0.5);//rad
+        double cy = Math.cos(yaw * 0.5);//rad
+        double sy = Math.sin(yaw * 0.5);//rad
 
         Z.setEntry(0,0,cr * cp * cy + sr * sp * sy);
-        Z.setEntry(1,0,cr * cp * cy + sr * sp * sy);
-        Z.setEntry(2,0,cr * cp * cy + sr * sp * sy);
-        Z.setEntry(3,0,cr * cp * cy + sr * sp * sy);
+        Z.setEntry(1,0,sr * cp * cy - cr * sp * sy);
+        Z.setEntry(2,0,cr * sp * cy + sr * cp * sy);
+        Z.setEntry(3,0,cr * cp * sy - sr * sp * cy);
 
     }
     public void KF(){
-        Xp=A.multiply(X);
-        Pp=Q.add(A.multiply(P.multiply(A.transpose())));
-        K=Pp.multiply(H.transpose().multiply(inv(R_mat.add(H.multiply(Pp.multiply(H.transpose()))))));
-        X=Xp.add(K.multiply(Z.subtract(H.multiply(Xp))));
-        P=Pp.subtract(K.multiply(H.multiply(Pp)));
-        KF_res[0] = Math.atan2(2*(X.getEntry(2,0)*X.getEntry(3,0) + X.getEntry(0,0)*X.getEntry(1,0)), 1 - 2*(Math.pow(X.getEntry(1,0),2) + Math.pow(X.getEntry(2,0),2)));
-        KF_res[1]  = -Math.asin(2*(X.getEntry(1,0)*X.getEntry(3,0) - X.getEntry(0,0)*X.getEntry(2,0)));
-        KF_res[2]  =Math.atan2(2*(X.getEntry(1,0)*X.getEntry(2,0) + X.getEntry(0,0)*X.getEntry(3,0)), 1 - 2*(Math.pow(X.getEntry(2,0),2) + Math.pow(X.getEntry(3,0),2)));
+        Xp=A.multiply(X); //AX
+        Pp=Q.add(A.multiply(P.multiply(A.transpose()))); //Q+(APA^T)
+        K=Pp.multiply(H.transpose().multiply(inv(R_mat.add(H.multiply(Pp.multiply(H.transpose()))))));//P_pH^t(R+(HP_pH^t))^-1
+        X=Xp.add(K.multiply(Z.subtract(H.multiply(Xp)))); //Xp+(K(Z-HX_p)
+        P=Pp.subtract(K.multiply(H.multiply(Pp))); //P_p-KHP_p
+
+        phi= Math.atan2(2*(X.getEntry(2,0)*X.getEntry(3,0) + X.getEntry(0,0)*X.getEntry(1,0)), 1 - 2*(Math.pow(X.getEntry(1,0),2) + Math.pow(X.getEntry(2,0),2)));
+        theta =-Math.asin(2*(X.getEntry(1,0)*X.getEntry(3,0) - X.getEntry(0,0)*X.getEntry(2,0)));
+        psi=Math.atan2(2*(X.getEntry(1,0)*X.getEntry(2,0) + X.getEntry(0,0)*X.getEntry(3,0)), 1 - 2*(Math.pow(X.getEntry(2,0),2) + Math.pow(X.getEntry(3,0),2)));
+
+        KF_res[0] = Math.ceil(phi*180/Math.PI*1000)/1000;
+        KF_res[1]  =Math.ceil(theta*180/Math.PI*1000)/1000;
+        KF_res[2]  =Math.ceil(psi*180/Math.PI*1000)/1000;
 
     }
     public RealMatrix inv(RealMatrix matrix){
